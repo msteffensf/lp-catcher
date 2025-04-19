@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Catcher</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 700px;
+            background-color: #222;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+        }
+
+        .basket {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            width: 100px;
+            height: 60px;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transform: translateX(-50%);
+        }
+
+        .falling-object {
+            position: absolute;
+            top: -50px;
+            width: 30px;
+            height: 30px;
+            background-color: red;
+            border-radius: 50%;
+            animation: fall 3s infinite linear;
+        }
+
+        @keyframes fall {
+            0% {
+                top: -50px;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: white;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="score" id="score">Pontos: 0</div>
+        <div class="basket" id="basket"></div>
+        <div class="game-over" id="gameOver">Fim de Jogo! <br> Clique para reiniciar</div>
+    </div>
+
+    <script>
+        let score = 0;
+        let isGameOver = false;
+        let basket = document.getElementById("basket");
+        let gameContainer = document.querySelector(".game-container");
+        let gameOverMessage = document.getElementById("gameOver");
+        let scoreDisplay = document.getElementById("score");
+        let gameInterval;
+        let objectInterval;
+
+        // Mover o cesto
+        document.addEventListener("mousemove", function(e) {
+            if (!isGameOver) {
+                let x = e.clientX - gameContainer.offsetLeft;
+                if (x < 50) x = 50;
+                if (x > gameContainer.offsetWidth - 50) x = gameContainer.offsetWidth - 50;
+                basket.style.left = x - basket.offsetWidth / 2 + "px";
+            }
+        });
+
+        // Função para gerar objetos caindo
+        function createFallingObject() {
+            let obj = document.createElement("div");
+            obj.classList.add("falling-object");
+            let xPos = Math.random() * (gameContainer.offsetWidth - 30);
+            obj.style.left = xPos + "px";
+            gameContainer.appendChild(obj);
+
+            // Verificar colisão com o cesto
+            let objectFallInterval = setInterval(() => {
+                let objectRect = obj.getBoundingClientRect();
+                let basketRect = basket.getBoundingClientRect();
+
+                if (objectRect.top + objectRect.height >= basketRect.top &&
+                    objectRect.left + objectRect.width / 2 >= basketRect.left &&
+                    objectRect.left + objectRect.width / 2 <= basketRect.left + basketRect.width) {
+                    // Colisão com o cesto
+                    score++;
+                    scoreDisplay.textContent = "Pontos: " + score;
+                    clearInterval(objectFallInterval);
+                    obj.remove();
+                } else if (objectRect.top + objectRect.height > gameContainer.offsetHeight) {
+                    // Se o objeto cair fora da tela
+                    score--;
+                    scoreDisplay.textContent = "Pontos: " + score;
+                    clearInterval(objectFallInterval);
+                    obj.remove();
+                }
+            }, 20);
+        }
+
+        // Função para iniciar o jogo
+        function startGame() {
+            isGameOver = false;
+            score = 0;
+            scoreDisplay.textContent = "Pontos: " + score;
+            gameOverMessage.style.display = "none";
+
+            // Criar objetos caindo
+            objectInterval = setInterval(createFallingObject, 1000);
+
+            // Parar o jogo se a pontuação for negativa
+            gameInterval = setInterval(() => {
+                if (score < 0) {
+                    clearInterval(objectInterval);
+                    clearInterval(gameInterval);
+                    isGameOver = true;
+                    gameOverMessage.style.display = "block";
+                }
+            }, 100);
+        }
+
+        // Iniciar jogo ao clicar na tela
+        gameOverMessage.addEventListener("click", startGame);
+
+        // Começar o jogo na primeira vez
+        startGame();
+    </script>
+
+</body>
+</html>
